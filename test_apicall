@@ -53,7 +53,7 @@ You are reading a CS lecture deck.
    sorting, searching). If one example is built up across several slides,
    output it as ONE example using slide_start and slide_end. Only create
    separate examples when the code or input is actually different.
-3. Return at most 8 examples. Prefer the clearest recursion and array ones.
+3. Prefer the clearest recursion and array examples.
 4. For each example, write an equivalent Python function in python_code.
    The function must be self-contained and runnable, with no input() calls
    and no imports. Keep step_explanations to one short line each, and
