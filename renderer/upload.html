@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lecture Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="upload.css">
+</head>
+<body>
+  <header>
+    <h1>Lecture Visualizer</h1>
+    <span id="deck-name"></span>
+  </header>
+
+  <div id="upload-page">
+    <section id="upload-box">
+      <p>Upload a CS lecture deck (PDF). We'll find the worked examples we can animate.</p>
+      <input type="file" id="pdf-input" accept="application/pdf">
+      <button id="upload-btn" disabled>Read deck</button>
+      <p id="status"></p>
+    </section>
+
+    <section id="results" hidden>
+      <h2>Examples found</h2>
+      <ul id="example-list"></ul>
+      <h2>Sections</h2>
+      <ul id="section-list"></ul>
+    </section>
+  </div>
+
+  <script src="upload.js"></script>
+</body>
+</html>

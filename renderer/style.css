@@ -11,6 +11,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -29,6 +30,8 @@ header {
 }
 header h1 { margin: 0; font-size: 20px; }
 #progress { color: var(--muted); font-size: 14px; }
+#back-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+#back-link:hover { color: var(--current); }
 
 main {
   display: grid;

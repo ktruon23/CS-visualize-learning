@@ -135,6 +135,11 @@ function step(delta) {
   render();
 }
 
+// Going back to the upload page keeps its results if we came from there.
+$("back-link").onclick = e => {
+  if (document.referrer.includes("upload.html")) { e.preventDefault(); history.back(); }
+};
+
 $("next").onclick = () => step(1);
 $("back").onclick = () => step(-1);
 document.addEventListener("keydown", e => {
