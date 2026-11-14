@@ -1,14 +1,22 @@
 import os
 import sys
-import fitz  # pymupdf
+import pymupdf
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 from pydantic import BaseModel
 
 load_dotenv()
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-MODEL = "gemini-2.5-flash"   # if you get "model not found", check AI Studio for the current name
+# ---------- Config (all from .env) ----------
+API_KEY = os.environ["GEMINI_API_KEY"]
+USE_VERTEX = os.environ.get("USE_VERTEX", "false").lower() == "true"
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+
+if USE_VERTEX:
+    client = genai.Client(vertexai=True, api_key=API_KEY)
+else:
+    client = genai.Client(api_key=API_KEY)
 
 
 # ---------- Schema ----------
@@ -53,7 +61,7 @@ You are reading a CS lecture deck.
    sorting, searching). If one example is built up across several slides,
    output it as ONE example using slide_start and slide_end. Only create
    separate examples when the code or input is actually different.
-3. Prefer the clearest recursion and array examples.
+3. Return at most 8 examples. Prefer the clearest recursion and array ones.
 4. For each example, write an equivalent Python function in python_code.
    The function must be self-contained and runnable, with no input() calls
    and no imports. Keep step_explanations to one short line each, and
@@ -72,19 +80,27 @@ Only use information from the slides. Do not invent examples.
 # ---------- PDF to slide images ----------
 def pdf_to_images(pdf_path, out_dir):
     os.makedirs(out_dir, exist_ok=True)
-    doc = fitz.open(pdf_path)
+    doc = pymupdf.open(pdf_path)
     for i, page in enumerate(doc, start=1):
         page.get_pixmap(dpi=100).save(f"{out_dir}/slide_{i}.png")
     return len(doc)
 
 
 # ---------- Gemini call (with one retry) ----------
+def make_pdf_part(pdf_path):
+    if USE_VERTEX:
+        # Vertex: send the PDF bytes directly
+        with open(pdf_path, "rb") as f:
+            return types.Part.from_bytes(data=f.read(), mime_type="application/pdf")
+    # AI Studio: upload the file first
+    return client.files.upload(file=pdf_path)
+
 def call_gemini(pdf_path, retries=1):
-    uploaded = client.files.upload(file=pdf_path)
+    pdf_part = make_pdf_part(pdf_path)
     for attempt in range(retries + 1):
         response = client.models.generate_content(
             model=MODEL,
-            contents=[uploaded, PROMPT],
+            contents=[pdf_part, PROMPT],
             config={
                 "response_mime_type": "application/json",
                 "response_schema": DeckResult,
@@ -127,7 +143,8 @@ def process_deck(pdf_path, out_dir="output"):
     return result
 
 if __name__ == "__main__":
-    pdf = sys.argv[1] if len(sys.argv) > 1 else "samples/lecture.pdf"
+    pdf = sys.argv[1] if len(sys.argv) > 1 else "lecture.pdf"
+    print(f"Mode: {'Vertex' if USE_VERTEX else 'AI Studio / Gemini API'} | Model: {MODEL}")
     r = process_deck(pdf)
     print(f"{len(r.sections)} sections, {len(r.examples)} examples.")
     print("Saved output/examples.json and output/slides/")
