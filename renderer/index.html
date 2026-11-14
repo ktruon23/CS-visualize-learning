@@ -20,6 +20,7 @@
     <h1 id="title">Loading…</h1>
     <span id="progress"></span>
   </div>
+  <p id="note" hidden></p>
 
   <main>
     <!-- Left: the original slide -->
@@ -31,7 +32,7 @@
 
     <!-- Right: the live visualization -->
     <section id="viz-panel">
-      <svg id="viz"></svg>
+      <div id="viz-wrap"><svg id="viz"></svg></div>
       <p id="explanation"></p>
       <div id="quiz" hidden></div>
       <div id="controls">

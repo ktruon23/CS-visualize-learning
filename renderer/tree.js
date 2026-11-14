@@ -85,7 +85,10 @@ function drawTree(svg, frame, layout) {
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
   // Small trees shouldn't be blown up to fill the panel: cap the zoom at ~1.3x.
+  // Big trees shouldn't shrink below ~0.85x either: the panel scrolls instead.
   svg.style.maxWidth = `${Math.round(layout.width * 1.3)}px`;
+  svg.style.minWidth = `${Math.round(layout.width * 0.85)}px`;
+  svg.style.minHeight = `${Math.round(layout.height * 0.85)}px`;
 
   const byId = new Map(nodes.map(n => [n.id, n]));
 
@@ -122,4 +125,17 @@ function drawTree(svg, frame, layout) {
     }
     svg.appendChild(g);
   }
+
+  scrollToCurrent(svg, layout, pos.get(current));
+}
+
+// When the tree is bigger than the panel, keep the current call in view.
+function scrollToCurrent(svg, layout, p) {
+  const wrap = svg.parentElement;
+  if (!p || !wrap || wrap.scrollWidth <= wrap.clientWidth && wrap.scrollHeight <= wrap.clientHeight) return;
+  const scale = Math.min(svg.clientWidth / layout.width, svg.clientHeight / layout.height);
+  const offsetX = (svg.clientWidth - layout.width * scale) / 2;   // the drawing is centered
+  const offsetY = (svg.clientHeight - layout.height * scale) / 2;
+  wrap.scrollLeft = offsetX + p.x * scale - wrap.clientWidth / 2;
+  wrap.scrollTop = offsetY + p.y * scale - wrap.clientHeight / 2;
 }

@@ -37,6 +37,8 @@ async function load() {
   }
 
   $("title").textContent = state.data.title || state.data.example_id;
+  $("note").hidden = !state.data.note;
+  $("note").textContent = state.data.note || "";
   $("code").textContent = state.data.original_code || "";
   showSlide(state.data.slide_start);
   render();
@@ -61,7 +63,7 @@ function render() {
   $("progress").textContent = `Step ${state.current + 1} of ${frames.length}`;
   document.querySelector("#progress-bar span").style.width =
     `${((state.current + 1) / frames.length) * 100}%`;
-  $("explanation").textContent = frame.explanation || "";
+  $("explanation").textContent = frame.explanation || describeStep(frame);
 
   if (state.data.visualizer === "tree") {
     drawTree($("viz"), frame, state.layout);
@@ -74,6 +76,27 @@ function render() {
 
   $("back").disabled = state.current === 0;
   $("next").disabled = state.current === frames.length - 1 || quizBlocking();
+}
+
+// Until the Gemini explanation pass exists, describe each step from the
+// trace itself. Built only from recorded values, so it can't be wrong.
+function describeStep(frame) {
+  if (state.data.visualizer !== "tree") return "";
+  const { nodes, current } = frame.state;
+  const node = nodes.find(n => n.id === current);
+  if (!node) return "";
+  const show = v => JSON.stringify(v);
+  if (node.status === "returned") {
+    const kids = nodes.filter(n => n.parent === node.id && n.status === "returned");
+    if (kids.length) {
+      const parts = kids.map(k => `${k.label} = ${show(k.returned)}`).join(" and ");
+      return `With ${parts}, ${node.label} returns ${show(node.returned)}.`;
+    }
+    return `${node.label} returns ${show(node.returned)} directly. This is a base case.`;
+  }
+  if (node.parent === null) return `Start: call ${node.label}.`;
+  const parent = nodes.find(n => n.id === node.parent);
+  return `${parent.label} calls ${node.label} and waits for its answer.`;
 }
 
 // A frame with an unanswered quiz blocks Next until the student answers.

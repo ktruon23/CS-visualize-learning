@@ -3,7 +3,7 @@ Local server that ties the three parts together.
 
     upload PDF  ->  deck_reader.outline_deck()  ->  list of examples   (fast)
     pick one    ->  deck_reader.write_code()    ->  Python for that example only
-                ->  tracer.trace(example)       ->  frames
+                ->  tracer/tracer.py            ->  runs it, records frames, checks vs slide
     frames      ->  renderer/index.html
 
 Run from the repo root:
@@ -14,6 +14,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import sys
 import time
 import traceback
 
@@ -29,31 +30,40 @@ app = Flask(__name__)
 os.makedirs(DECKS_DIR, exist_ok=True)
 
 
-# ---------- loading the tracer ----------
+# ---------- the tracer (tracer/tracer.py, tracer teammate) ----------
+
+TRACER_DIR = os.path.join(ROOT, "tracer")
+_tracer = None
 
 
 def load_tracer():
+    """Import tracer/tracer.py. It imports tracer_core from its own folder, so
+    that folder has to be on the import path first."""
+    global _tracer
+    if _tracer is None:
+        path = os.path.join(TRACER_DIR, "tracer.py")
+        if not os.path.exists(path):
+            return None
+        if TRACER_DIR not in sys.path:
+            sys.path.insert(0, TRACER_DIR)
+        spec = importlib.util.spec_from_file_location("tracer_driver", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _tracer = module
+    return _tracer
+
+
+def run_tracer(tracer, example):
+    """Hand one example to the tracer and return its result.
+
+    deck_reader gives us `args` as a real list; the tracer reads `args_json`
+    (a JSON string), so convert. Its normalize_example() handles the rest
+    (e.g. expected_result -> expected_result_json).
     """
-    The tracer lives in tracer.py (tracer teammate). It must provide:
-
-        trace(example: dict) -> list[dict]
-
-    where `example` is one entry from examples.json and each returned dict is
-    one frame: {"step", "total_steps", "state", "explanation", "quiz"}.
-
-    By the time trace() is called, the example has (from deck_reader.write_code):
-        python_code, function_name, args (a real Python list of arguments),
-        call_label, original_code, expected_result
-    so the tracer runs: function_name(*args) inside python_code.
-    Returns None if tracer.py doesn't exist yet.
-    """
-    path = os.path.join(ROOT, "tracer.py")
-    if not os.path.exists(path):
-        return None
-    spec = importlib.util.spec_from_file_location("tracer", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    ex = dict(example)
+    if "args_json" not in ex and "args" in ex:
+        ex["args_json"] = json.dumps(ex["args"])
+    return tracer.process_example(ex)
 
 
 # ---------- pages and static files ----------
@@ -142,12 +152,29 @@ def trace_example(deck_id, index):
     if not os.path.exists(frames_path):
         tracer = load_tracer()
         if tracer is None:
-            return jsonify(error="The tracer isn't connected yet (no tracer.py in the repo)."), 501
+            return jsonify(error="The tracer isn't connected yet (no tracer/tracer.py in the repo)."), 501
         try:
-            frames = tracer.trace(example)
+            t0 = time.time()
+            result = run_tracer(tracer, example)
+            print(f"[trace] '{example['title']}': {result['status']}, "
+                  f"{result['total_steps']} frames in {time.time() - t0:.1f}s")
         except Exception as e:
             traceback.print_exc()
             return jsonify(error=f"Tracing failed: {e}"), 500
+
+        # The tracer's contract: only show "ok" (matches the slide) or
+        # "unchecked" (nothing to compare against). A mismatch means the code
+        # Gemini wrote doesn't do what the slide says, so don't show it.
+        if result["status"] not in ("ok", "unchecked"):
+            reasons = {
+                "mismatch": "The animation didn't match the slide, so it isn't shown.",
+                "error": "Running this example failed.",
+                "unsupported": "This example isn't supported.",
+            }
+            msg = reasons.get(result["status"], "This example couldn't be animated.")
+            if result.get("note"):
+                msg += f" {result['note']}"
+            return jsonify(error=msg), 422
 
         data = {
             "example_id": f"{deck_id}-{index}",
@@ -156,7 +183,11 @@ def trace_example(deck_id, index):
             "slide_end": example["slide_end"],
             "visualizer": example["visualizer"],
             "original_code": example["original_code"],
-            "frames": frames,
+            "status": result["status"],
+            # Only worth telling the student when the input was shrunk,
+            # e.g. "fib(30) is too large to animate, showing fib(7)."
+            "note": result.get("note") if result.get("shrunk") else None,
+            "frames": result["frames"],
         }
         with open(frames_path, "w") as f:
             json.dump(data, f, indent=2)
