@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lecture Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1 id="title">Loading…</h1>
+    <span id="progress"></span>
+  </header>
+
+  <main>
+    <!-- Left: the original slide -->
+    <section id="slide-panel">
+      <img id="slide-img" alt="Lecture slide">
+      <div id="slide-placeholder" hidden></div>
+      <pre id="code"></pre>
+    </section>
+
+    <!-- Right: the live visualization -->
+    <section id="viz-panel">
+      <svg id="viz"></svg>
+      <p id="explanation"></p>
+      <div id="quiz" hidden></div>
+      <div id="controls">
+        <button id="back">&larr; Back</button>
+        <button id="next">Next &rarr;</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="tree.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>
