@@ -1,0 +1,288 @@
+{
+  "example_id": "haskell-sum-sample",
+  "title": "Haskell: sum of a list",
+  "slide_start": 1,
+  "slide_end": 1,
+  "visualizer": "tree",
+  "original_code": "sum :: [Int] -> Int\nsum []     = 0\nsum (x:xs) = x + sum xs\n\n-- sum [3,1,4]",
+  "frames": [
+    {
+      "step": 1,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          }
+        ],
+        "current": 0
+      },
+      "explanation": "sum [3,1,4] matches (x:xs) with x = 3 and xs = [1,4], so it needs 3 + sum [1,4].",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 2,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "waiting",
+            "returned": null
+          }
+        ],
+        "current": 1
+      },
+      "explanation": "sum [1,4] matches (x:xs) with x = 1 and xs = [4], so it needs 1 + sum [4].",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 3,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "waiting",
+            "returned": null
+          }
+        ],
+        "current": 2
+      },
+      "explanation": "sum [4] matches (x:xs) with x = 4 and xs = [], so it needs 4 + sum [].",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 4,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 3,
+            "parent": 2,
+            "label": "sum []",
+            "status": "waiting",
+            "returned": null
+          }
+        ],
+        "current": 3
+      },
+      "explanation": "sum [] matches the empty-list case: sum [] = 0.",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 5,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 3,
+            "parent": 2,
+            "label": "sum []",
+            "status": "returned",
+            "returned": 0
+          }
+        ],
+        "current": 3
+      },
+      "explanation": "sum [] returns 0. This is the base case, so the recursion stops here.",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 6,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "returned",
+            "returned": 4
+          },
+          {
+            "id": 3,
+            "parent": 2,
+            "label": "sum []",
+            "status": "returned",
+            "returned": 0
+          }
+        ],
+        "current": 2
+      },
+      "explanation": "sum [4] returns 4 + 0 = 4.",
+      "quiz": {
+        "question": "sum [4] returned 4. What does sum [1,4] return?",
+        "choices": [
+          "4",
+          "5",
+          "1"
+        ],
+        "answer_index": 1
+      },
+      "total_steps": 8
+    },
+    {
+      "step": 7,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "waiting",
+            "returned": null
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "returned",
+            "returned": 5
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "returned",
+            "returned": 4
+          },
+          {
+            "id": 3,
+            "parent": 2,
+            "label": "sum []",
+            "status": "returned",
+            "returned": 0
+          }
+        ],
+        "current": 1
+      },
+      "explanation": "sum [1,4] returns 1 + 4 = 5.",
+      "quiz": null,
+      "total_steps": 8
+    },
+    {
+      "step": 8,
+      "state": {
+        "nodes": [
+          {
+            "id": 0,
+            "parent": null,
+            "label": "sum [3,1,4]",
+            "status": "returned",
+            "returned": 8
+          },
+          {
+            "id": 1,
+            "parent": 0,
+            "label": "sum [1,4]",
+            "status": "returned",
+            "returned": 5
+          },
+          {
+            "id": 2,
+            "parent": 1,
+            "label": "sum [4]",
+            "status": "returned",
+            "returned": 4
+          },
+          {
+            "id": 3,
+            "parent": 2,
+            "label": "sum []",
+            "status": "returned",
+            "returned": 0
+          }
+        ],
+        "current": 0
+      },
+      "explanation": "sum [3,1,4] returns 3 + 5 = 8.",
+      "quiz": null,
+      "total_steps": 8
+    }
+  ]
+}

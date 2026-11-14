@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 load_dotenv()
 
+<<<<<<< HEAD:test_api_call.py
 # ---------- Config (all from .env) ----------
 API_KEY = os.environ["GEMINI_API_KEY"]
 USE_VERTEX = os.environ.get("USE_VERTEX", "false").lower() == "true"
@@ -17,6 +18,9 @@ if USE_VERTEX:
     client = genai.Client(vertexai=True, api_key=API_KEY)
 else:
     client = genai.Client(api_key=API_KEY)
+=======
+MODEL = "gemini-3.8-flash"  # if you get "model not found", check AI Studio for the current name
+>>>>>>> render:test_apicall
 
 
 # ---------- Schema ----------

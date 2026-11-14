@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lecture Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="upload.html"><span class="brand-mark"></span>Lecture Visualizer</a>
+    <a id="back-link" href="upload.html">All examples</a>
+  </header>
+  <div id="progress-bar"><span></span></div>
+
+  <div class="viewer-head">
+    <h1 id="title">Loading…</h1>
+    <span id="progress"></span>
+  </div>
+
+  <main>
+    <!-- Left: the original slide -->
+    <section id="slide-panel">
+      <img id="slide-img" alt="Lecture slide">
+      <div id="slide-placeholder" hidden></div>
+      <pre id="code"></pre>
+    </section>
+
+    <!-- Right: the live visualization -->
+    <section id="viz-panel">
+      <svg id="viz"></svg>
+      <p id="explanation"></p>
+      <div id="quiz" hidden></div>
+      <div id="controls">
+        <button id="back">Back</button>
+        <button id="next">Next</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="tree.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

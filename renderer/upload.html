@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lecture Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="upload.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="upload.html"><span class="brand-mark"></span>Lecture Visualizer</a>
+  </header>
+
+  <div id="upload-page">
+    <section id="intro">
+      <h1>Watch your lecture's code run, one step at a time.</h1>
+      <p>Upload the slides from your CS class. We find the functions in them, run them on a small input, and show every call as it happens, next to the slide it came from.</p>
+
+      <div id="picker">
+        <label id="drop" for="pdf-input">
+          <input type="file" id="pdf-input" accept="application/pdf">
+          <span id="drop-title">Choose a lecture PDF</span>
+          <span id="drop-hint">or drag it here</span>
+        </label>
+        <button id="upload-btn" disabled>Read deck</button>
+      </div>
+      <p id="status" role="status"></p>
+    </section>
+
+    <section id="results" hidden>
+      <div class="results-head">
+        <h2>Examples</h2>
+        <span id="deck-name"></span>
+      </div>
+      <ul id="example-list"></ul>
+
+      <h2 class="sections-title">What the deck covers</h2>
+      <ul id="section-list"></ul>
+    </section>
+  </div>
+
+  <script src="upload.js"></script>
+</body>
+</html>

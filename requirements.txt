@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 google-genai
 pydantic
 python-dotenv
 pymupdf
+=======
+flask
+google-genai
+pydantic
+pymupdf
+python-dotenv
+>>>>>>> render

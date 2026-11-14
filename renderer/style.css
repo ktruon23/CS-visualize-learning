@@ -1,0 +1,284 @@
+/* Lecture Visualizer: shared styles + viewer page.
+   Palette: ink navy, deep blue, signal blue on cool paper.
+   Tree nodes: waiting calls are pale outlines; returned calls fill solid
+   deep blue, so the tree visibly fills in from the leaves up. */
+
+:root {
+  --ink: #0e1b33;        /* text, top bar */
+  --ink-soft: #4a5876;   /* secondary text */
+  --deep: #1b3a8a;       /* primary: returned calls, main buttons */
+  --signal: #2f6fed;     /* the thing happening right now */
+  --paper: #f4f6fa;      /* page background */
+  --surface: #ffffff;    /* panels */
+  --line: #d9dfea;       /* hairlines */
+  --pale: #e6eefd;       /* waiting calls, quiz panel */
+  --pale-line: #a9c1f3;
+  --wrong: #b4442f;
+
+  --sans: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* ---------- Top bar ---------- */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 28px;
+  height: 60px;
+  background: var(--ink);
+  color: #fff;
+}
+.brand {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-decoration: none;
+}
+.brand-mark {
+  display: inline-block;
+  width: 10px; height: 10px;
+  margin-right: 10px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow: 4px 4px 0 var(--pale-line);
+  vertical-align: 1px;
+}
+#back-link {
+  color: #c9d6f2;
+  font-size: 14px;
+  text-decoration: none;
+}
+#back-link:hover { color: #fff; }
+
+/* Thin step-progress bar under the header (viewer only) */
+#progress-bar {
+  height: 3px;
+  background: #24365c;
+}
+#progress-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--signal);
+  transition: width 160ms ease-out;
+}
+
+/* ---------- Viewer layout ---------- */
+
+.viewer-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 28px 0;
+}
+#title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+#progress {
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+  gap: 20px;
+  padding: 18px 28px 28px;
+  min-height: calc(100vh - 63px - 58px);
+}
+
+/* Left: the original slide */
+#slide-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+#slide-img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+#slide-placeholder {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  text-align: center;
+}
+#code {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--ink);
+  color: #dbe5fb;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Right: the visualization */
+#viz-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+#viz {
+  display: block;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1 1 0;          /* take the leftover height, not the SVG's own size */
+  min-height: 280px;
+  padding: 8px;
+}
+
+/* The narration line: what just happened */
+#explanation {
+  margin: 0;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 18px;
+  line-height: 1.45;
+  min-height: 3.6em;
+}
+
+/* ---------- Tree ---------- */
+
+.edge { stroke: #b8c4da; stroke-width: 1.5; }
+
+.node rect { stroke-width: 1.5; }
+.node .label {
+  font-family: var(--mono);
+  font-size: 14px;
+  text-anchor: middle;
+}
+.node .returned {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+/* waiting on its children: pale, outlined */
+.node.waiting rect { fill: var(--pale); stroke: var(--pale-line); }
+.node.waiting .label { fill: var(--deep); }
+
+/* finished: solid deep blue */
+.node.returned rect { fill: var(--deep); stroke: var(--deep); }
+.node.returned .label { fill: #fff; }
+.node.returned .returned { fill: var(--deep); }
+
+/* the call happening right now */
+.node.current rect { stroke: var(--signal); stroke-width: 3; }
+.node.current.returned rect { fill: var(--signal); }
+.node.current .returned { fill: var(--signal); }
+
+/* ---------- Quiz ---------- */
+
+#quiz {
+  margin: 0 20px 4px;
+  padding: 14px 16px;
+  background: var(--pale);
+  border-radius: 6px;
+}
+.quiz-question {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+.choice, .reveal {
+  margin: 0 8px 6px 0;
+  padding: 7px 16px;
+  border: 1px solid var(--pale-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+}
+.choice { font-family: var(--mono); min-width: 48px; }
+.choice:hover:not(:disabled) { border-color: var(--signal); }
+.choice.correct { background: var(--deep); border-color: var(--deep); color: #fff; }
+.choice.wrong { border-color: var(--wrong); color: var(--wrong); text-decoration: line-through; }
+.reveal { border-color: transparent; background: transparent; color: var(--ink-soft); text-decoration: underline; }
+.quiz-feedback { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+
+/* ---------- Step controls ---------- */
+
+#controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+}
+#controls button {
+  padding: 9px 22px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#back {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+#next {
+  background: var(--deep);
+  color: #fff;
+  border: 1px solid var(--deep);
+}
+#next:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); }
+#back:hover:not(:disabled) { border-color: var(--ink-soft); }
+#controls button:disabled { opacity: 0.35; cursor: default; }
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  header, .viewer-head { padding-left: 18px; padding-right: 18px; }
+  main { padding: 14px 18px 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
