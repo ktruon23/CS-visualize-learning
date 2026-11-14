@@ -1,0 +1,12 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# generated
+output/
+__pycache__/
+*.pyc
+
+# environment
+.venv/
