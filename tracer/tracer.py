@@ -3,7 +3,7 @@ Tracer driver: Example JSON in, Frame JSON out.
 
 For every example in examples.json:
   1. skip it if Gemini marked it unsupported
-  2. run it in an isolated worker process (trace_core.py) with a time limit
+  2. run it in an isolated worker process (tracer_core.py) with a time limit
   3. if it's too big, shrink the input and retry ("fib(30) is too large, showing fib(7)")
   4. check the result against what the slide says (expected_result_json)
   5. wrap each recorded state into a frame for the renderer
@@ -23,13 +23,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-from trace_core import fmt, make_label
+from tracer_core import fmt, make_label
 
 MAX_TRACE_STEPS = 500        # frames per example before we shrink the input
 TIMEOUT_SECONDS = 3          # wall-clock limit per worker run
 MAX_SHRINK_ATTEMPTS = 6      # how many times we halve the input before giving up
 
-WORKER = Path(__file__).resolve().with_name("trace_core.py")
+WORKER = Path(__file__).resolve().with_name("tracer_core.py")
 
 
 # ---------------------------------------------------------------- running
@@ -133,6 +133,78 @@ def check(ex, out, shrunk):
         return "ok", None
     return "mismatch", f"Trace gives {fmt(actual)} but the slide says {fmt(expected)}."
 
+# ---------------------------------------------------------------- old-format adapter
+
+COMMON_POINTERS = ["i", "j", "k", "lo", "hi", "low", "high", "left", "right", "mid", "l", "r", "p"]
+
+def _parse_value(s):
+    """Parse a value Gemini wrote as a string: JSON first, then Python literal."""
+    try:
+        return json.loads(s)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    try:
+        return ast.literal_eval(s)
+    except (ValueError, SyntaxError):
+        return None
+
+
+def _first_function(code):
+    try:
+        for node in ast.parse(code).body:
+            if isinstance(node, ast.FunctionDef):
+                return node.name
+    except SyntaxError:
+        pass
+    return None
+
+
+def _assigned_names(code):
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return set()
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
+    names |= {a.arg for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) for a in n.args.args}
+    return names
+
+
+def normalize_example(ex):
+    """Accept the old API-call schema (input / expected_result, no function_name)
+    and fill in the fields the tracer needs. New-format examples pass through unchanged."""
+    ex = dict(ex)
+    code = ex.get("python_code") or ""
+
+    if not ex.get("function_name"):
+        ex["function_name"] = _first_function(code) or ""
+
+    if "args_json" not in ex and "input" in ex:
+        val = _parse_value(ex["input"]) if isinstance(ex["input"], str) else ex["input"]
+        params = param_names(code, ex["function_name"])
+        if len(params) > 1 and isinstance(val, (list, tuple)) and len(val) == len(params):
+            args = list(val)          # "[2, 3]" for power(b, e)
+        else:
+            args = [val]              # "[3,1,4]" for sum_list(xs)
+        ex["args_json"] = json.dumps(args)
+
+    if "expected_result_json" not in ex:
+        raw = ex.get("expected_result")
+        if raw in (None, ""):
+            ex["expected_result_json"] = None
+        else:
+            val = _parse_value(raw) if isinstance(raw, str) else raw
+            ex["expected_result_json"] = json.dumps(val if val is not None else raw)
+
+    if ex.get("visualizer") == "array":
+        params = param_names(code, ex["function_name"])
+        if not ex.get("array_var") and params:
+            ex["array_var"] = params[0]   # sorts almost always take the array first
+        if not ex.get("pointer_vars"):
+            assigned = _assigned_names(code)
+            ex["pointer_vars"] = [p for p in COMMON_POINTERS if p in assigned]
+
+    return ex
+
 
 # ---------------------------------------------------------------- one example
 
@@ -141,6 +213,7 @@ def example_id(ex):
 
 
 def process_example(ex):
+    ex = normalize_example(ex)
     base = {
         "example_id": example_id(ex),
         "slide_start": ex.get("slide_start"),
@@ -208,13 +281,15 @@ def trace_deck(examples_path, frames_path):
     examples = data["examples"] if isinstance(data, dict) else data
     results = [process_example(ex) for ex in examples]
     out = {"max_trace_steps": MAX_TRACE_STEPS, "examples": results}
+    Path(frames_path).parent.mkdir(parents=True, exist_ok=True)
     Path(frames_path).write_text(json.dumps(out, indent=2))
     return results
 
 
 if __name__ == "__main__":
-    src = sys.argv[1] if len(sys.argv) > 1 else "examples.json"
-    dst = sys.argv[2] if len(sys.argv) > 2 else "frames.json"
+    here = Path(__file__).resolve().parent
+    src = sys.argv[1] if len(sys.argv) > 1 else here / "fixtures" / "examples.json"
+    dst = sys.argv[2] if len(sys.argv) > 2 else here.parent / "output" / "frames.json"
     for r in trace_deck(src, dst):
         note = f"  ({r['note']})" if r.get("note") else ""
         print(f"{r['example_id']:<28} {r['status']:<12} {r['total_steps']:>4} frames{note}")
