@@ -84,16 +84,21 @@ function drawTree(svg, frame, layout) {
 
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
+  // Small trees shouldn't be blown up to fill the panel: cap the zoom at ~1.3x.
+  svg.style.maxWidth = `${Math.round(layout.width * 1.3)}px`;
 
-  const present = new Set(nodes.map(n => n.id));
+  const byId = new Map(nodes.map(n => [n.id, n]));
 
   // 1. Edges first, so nodes are drawn on top of the lines.
   for (const n of nodes) {
-    if (n.parent === null || !present.has(n.parent)) continue;
+    if (n.parent === null || !byId.has(n.parent)) continue;
+    const parent = byId.get(n.parent);
     const a = pos.get(n.parent), b = pos.get(n.id);
-    // Start below the parent's "= value" text so the line doesn't cross it.
+    // Once the parent shows its "= value", start the line below that text.
+    const hasValue = parent.returned !== null && parent.returned !== undefined;
     svg.appendChild(svgEl("line", {
-      x1: a.x, y1: a.y + NODE_H / 2 + VALUE_SPACE, x2: b.x, y2: b.y - NODE_H / 2, class: "edge",
+      x1: a.x, y1: a.y + NODE_H / 2 + (hasValue ? VALUE_SPACE : 0),
+      x2: b.x, y2: b.y - NODE_H / 2, class: "edge",
     }));
   }
 

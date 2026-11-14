@@ -27,7 +27,7 @@ async function load() {
     state.data = await res.json();
   } catch (err) {
     $("explanation").textContent =
-      `Couldn't load ${DATA_URL} (${err.message}). Run a local server from the repo root: python3 -m http.server`;
+      `Couldn't load ${DATA_URL} (${err.message}). Start the server from the repo folder with: python3 server.py`;
     return;
   }
 
@@ -47,7 +47,7 @@ function showSlide(n) {
   img.onerror = () => {
     img.hidden = true;
     $("slide-placeholder").hidden = false;
-    $("slide-placeholder").textContent = `Slide ${n} (image not found in ${SLIDE_DIR})`;
+    $("slide-placeholder").textContent = `Slide ${n} isn't available. Upload the deck to see it here.`;
   };
   img.hidden = false;
   $("slide-placeholder").hidden = true;
@@ -59,6 +59,8 @@ function render() {
   const frame = frames[state.current];
 
   $("progress").textContent = `Step ${state.current + 1} of ${frames.length}`;
+  document.querySelector("#progress-bar span").style.width =
+    `${((state.current + 1) / frames.length) * 100}%`;
   $("explanation").textContent = frame.explanation || "";
 
   if (state.data.visualizer === "tree") {
