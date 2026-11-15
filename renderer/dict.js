@@ -88,9 +88,10 @@ function layoutDict(frames) {
 
 // ---------- drawing one frame ----------
 
-function drawDict(svg, frame, layout) {
+function drawDict(svg, frame, layout, prevFrame = null) {
   const { info, keyW, valW, callW, tableX, callX, rowY } = layout;
   const { nodes, current } = frame.state;
+  const changes = frameChanges(frame, prevFrame);   // from tree.js
   const el = svgEl;   // helper from tree.js
 
   svg.innerHTML = "";
@@ -122,6 +123,7 @@ function drawDict(svg, frame, layout) {
     if (checker) cls.push(isMatch ? "match" : "miss");
     if (i === currentRow) cls.push("current");
     if (checker && isMatch && checker.status === "returned") cls.push("found");
+    if (checker && isMatch && changes.settled.has(checker.id)) cls.push("settle");
 
     const g = el("g", { class: cls.join(" ") });
     g.appendChild(el("rect", { x: tableX, y, width: keyW, height: DICT_ROW_H, rx: 6, class: "dict-key" }));
@@ -148,16 +150,22 @@ function drawDict(svg, frame, layout) {
     const parent = nodes.find(p => p.id === n.parent);
     if (parent) {
       const py = rowY(dictRowOf(parent, info));
-      svg.appendChild(el("line", { x1: callX + 16, y1: py + DICT_ROW_H, x2: callX + 16, y2: y, class: "edge" }));
+      const isNew = changes.entered.has(n.id);
+      svg.appendChild(el("line", {
+        x1: callX + 16, y1: py + DICT_ROW_H, x2: callX + 16, y2: y,
+        class: isNew ? "edge enter" : "edge", ...(isNew ? { pathLength: 1 } : {}),
+      }));
     }
     // A short pointer from the call to the row it's looking at.
     svg.appendChild(el("line", {
       x1: tableX + keyW + valW + 6, y1: y + DICT_ROW_H / 2, x2: callX - 6, y2: y + DICT_ROW_H / 2,
-      class: "dict-link" + (n.id === current ? " current" : ""),
+      class: "dict-link" + (n.id === current ? " current" : "") + (changes.entered.has(n.id) ? " enter" : ""),
     }));
 
     const cls = ["node", n.status];
     if (n.id === current) cls.push("current");
+    if (changes.entered.has(n.id)) cls.push("enter");
+    if (changes.settled.has(n.id)) cls.push("settle");
     const g = el("g", { class: cls.join(" ") });
     g.appendChild(el("rect", { x: callX, y, width: callW, height: DICT_ROW_H, rx: 8 }));
     g.appendChild(el("text", { x: callX + callW / 2, y: y + DICT_ROW_H / 2 + 5, class: "label" }, dictCallLabel(n, info)));

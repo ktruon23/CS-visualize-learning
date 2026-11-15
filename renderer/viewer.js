@@ -226,13 +226,19 @@ function render() {
     `${((state.current + 1) / frames.length) * 100}%`;
   $("explanation").textContent = frame.explanation || describeStep(frame);
 
+  // Only animate when moving forward one step (Next / autoplay). Back is instant.
+  const prev = state.direction === 1 ? frames[state.current - 1] : null;
+  if (prev) {
+    replayAnimation($("explanation"), "appear");
+    if (frame.quiz) setTimeout(() => replayAnimation($("quiz"), "appear"), 0);
+  }
+
   if (state.data.visualizer === "tree") {
-    drawTree($("viz"), frame, state.layout);
+    drawTree($("viz"), frame, state.layout, prev);
   } else if (state.data.visualizer === "array") {
-    const prev = state.direction === 1 ? frames[state.current - 1] : null;
     drawArray($("viz"), frame, state.layout, prev);
   } else if (state.data.visualizer === "dict") {
-    drawDict($("viz"), frame, state.layout);
+    drawDict($("viz"), frame, state.layout, prev);
   } else {
     $("viz").innerHTML = "";
     $("explanation").textContent = `The "${state.data.visualizer}" visualizer isn't built yet.`;
@@ -352,6 +358,13 @@ function renderQuiz(frame) {
     box.appendChild(reveal);
   }
   box.appendChild(feedback);
+}
+
+// Restart a CSS animation on an element that's already on the page.
+function replayAnimation(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;   // forces the browser to notice the removal
+  el.classList.add(cls);
 }
 
 // ---------- controls ----------

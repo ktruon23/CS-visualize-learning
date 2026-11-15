@@ -77,10 +77,28 @@ function svgEl(tag, attrs = {}, text = null) {
   return el;
 }
 
+// What's new since the previous frame, so only that gets animated.
+//   entered: calls that appear in this frame
+//   settled: calls that returned in this frame
+// prevFrame is null when we shouldn't animate (going Back, jumping, first draw).
+function frameChanges(frame, prevFrame) {
+  const entered = new Set(), settled = new Set();
+  if (!prevFrame) return { entered, settled };
+  const before = new Map(prevFrame.state.nodes.map(n => [n.id, n]));
+  for (const n of frame.state.nodes) {
+    const old = before.get(n.id);
+    if (!old) entered.add(n.id);
+    else if (n.status === "returned" && old.status !== "returned") settled.add(n.id);
+  }
+  return { entered, settled };
+}
+
 // Draw one frame. svg: the <svg> element. layout: result of layoutTree().
-function drawTree(svg, frame, layout) {
+// prevFrame (optional): the frame just before, to animate what changed.
+function drawTree(svg, frame, layout, prevFrame = null) {
   const { nodes, current } = frame.state;
   const pos = layout.positions;
+  const changes = frameChanges(frame, prevFrame);
 
   svg.innerHTML = "";
   svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
@@ -99,9 +117,12 @@ function drawTree(svg, frame, layout) {
     const a = pos.get(n.parent), b = pos.get(n.id);
     // Once the parent shows its "= value", start the line below that text.
     const hasValue = parent.returned !== null && parent.returned !== undefined;
+    const isNew = changes.entered.has(n.id);
     svg.appendChild(svgEl("line", {
       x1: a.x, y1: a.y + NODE_H / 2 + (hasValue ? VALUE_SPACE : 0),
-      x2: b.x, y2: b.y - NODE_H / 2, class: "edge",
+      x2: b.x, y2: b.y - NODE_H / 2,
+      class: isNew ? "edge enter" : "edge",
+      ...(isNew ? { pathLength: 1 } : {}),   // lets CSS "draw" the line in
     }));
   }
 
@@ -111,6 +132,8 @@ function drawTree(svg, frame, layout) {
     const w = nodeWidth(n.label);
     const classes = ["node", n.status];
     if (n.id === current) classes.push("current");
+    if (changes.entered.has(n.id)) classes.push("enter");
+    if (changes.settled.has(n.id)) classes.push("settle");
 
     const g = svgEl("g", { class: classes.join(" ") });
     g.appendChild(svgEl("rect", {

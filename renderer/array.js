@@ -181,6 +181,7 @@ function drawArray(svg, frame, layout, prevFrame = null) {
         g.style.transition = "none";
         g.style.transform = `translate(${xOf(k) - x}px, 0)`;
         toSettle.push(g);
+        g.classList.add("settle");   // small bump once it lands (same as the tree)
       } else {
         g.classList.add("new");   // value didn't exist before (e.g. the insertion key)
       }
@@ -195,9 +196,26 @@ function drawArray(svg, frame, layout, prevFrame = null) {
   }
 
   // 4. Pointers: an arrow up to the cell, names stacked underneath.
+  const prevPointers = animate ? (prevFrame.state.pointers || {}) : null;
+  const prevLength = animate ? prevFrame.state.array.length : 0;
+  const toGlide = [];
   for (const [idx, list] of groups) {
     const cx = xOf(idx) + cellW / 2;
     const g = arrSvgEl("g", { class: "pointer" });
+    if (prevPointers) {
+      // Where were these pointers last step? Glide from there; new ones drop in.
+      const known = list.find(p => p.name in prevPointers);
+      if (!known) {
+        g.classList.add("enter");
+      } else {
+        const oldIdx = arrClampIndex(prevPointers[known.name], prevLength);
+        if (oldIdx !== idx) {
+          g.style.transition = "none";
+          g.style.transform = `translate(${xOf(oldIdx) - xOf(idx)}px, 0)`;
+          toGlide.push(g);
+        }
+      }
+    }
     const tipY = cellsTop + ARR_CELL_H + 3;
     g.appendChild(arrSvgEl("line", { x1: cx, y1: pointersTop - 4, x2: cx, y2: tipY + 6 }));
     g.appendChild(arrSvgEl("polygon", {
@@ -208,6 +226,12 @@ function drawArray(svg, frame, layout, prevFrame = null) {
       g.appendChild(arrSvgEl("text", { x: cx, y: pointersTop + 10 + row * ARR_POINTER_ROW }, label));
     });
     svg.appendChild(g);
+  }
+
+  if (toGlide.length) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const g of toGlide) { g.style.transition = ""; g.style.transform = ""; }
+    }));
   }
 
   // 5. Other variables (accumulators, the insertion key, ...) on one line,

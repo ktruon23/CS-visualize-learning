@@ -333,6 +333,53 @@ main {
 
 .node .returned.dict-ret { text-anchor: start; }
 
+/* ---------- Step animations ----------
+   Only what's new in a step moves (classes added by tree.js / dict.js /
+   viewer.js when stepping forward). Short, so they fit inside autoplay. */
+
+.node, .dict-row { transform-box: fill-box; transform-origin: center; }
+
+/* a call appears: drops in */
+.node.enter { animation: node-enter 260ms cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes node-enter {
+  from { opacity: 0; transform: translateY(-8px) scale(0.92); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* the line to it draws itself from the parent down */
+.edge.enter { stroke-dasharray: 1; animation: edge-draw 240ms ease-out both; }
+@keyframes edge-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.dict-link.enter { animation: fade-in 260ms ease-out both; }
+
+/* a call returns: a small bump, and its value pops up */
+.node.settle, .dict-row.settle { animation: settle 280ms ease-out; }
+@keyframes settle {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+.node.settle .returned {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: value-pop 300ms cubic-bezier(.2, .8, .3, 1.2) both;
+}
+@keyframes value-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.8); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* the narration and quiz ease in with each step */
+#explanation.appear { animation: text-in 220ms ease-out; }
+#quiz.appear { animation: text-in 260ms ease-out; }
+@keyframes text-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
 /* ---------- Quiz ---------- */
 
 #quiz {
@@ -411,7 +458,7 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+  * { transition: none !important; animation: none !important; }
 }
 
 /* ---------- Array visualizer ---------- */
@@ -421,6 +468,19 @@ main {
 #viz .cell.changed rect  { fill: #fff3b0; stroke: #e0a800; stroke-width: 2.5; }
 #viz .cell.new           { animation: arr-pop 0.35s ease; }
 @keyframes arr-pop       { from { opacity: 0; } to { opacity: 1; } }
+
+/* Step animations, matching the tree (see "Step animations" above). The <g>
+   carries the slide transform, so the bump runs on its rect and text. */
+#viz .cell rect, #viz .cell text { transform-box: fill-box; transform-origin: center; }
+#viz .cell.settle rect,
+#viz .cell.settle text   { animation: settle 280ms ease-out 330ms; }   /* after the 350ms slide lands */
+#viz .cell.new rect,
+#viz .cell.new text      { animation: node-enter 260ms cubic-bezier(.2, .8, .3, 1) both; }
+#viz .pointer            { transition: transform 300ms cubic-bezier(.3, .7, .3, 1);
+                           transform-box: fill-box; transform-origin: center; }
+#viz .pointer.enter      { animation: node-enter 260ms cubic-bezier(.2, .8, .3, 1) both; }
+#viz .vars .changed      { animation: var-in 360ms ease-out both; }
+@keyframes var-in        { from { fill-opacity: 0; } to { fill-opacity: 1; } }
 #viz .ghost rect         { fill: none; stroke: #bbb; stroke-dasharray: 4 3; }
 #viz .index              { font: 12px "IBM Plex Mono", monospace; fill: #888; text-anchor: middle; }
 #viz .range              { fill: #e8f0ff; }
