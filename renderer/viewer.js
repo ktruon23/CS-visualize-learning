@@ -121,9 +121,14 @@ function describeArrayStep(frame) {
     const k = highlight[0];
     return `Position ${k} changes from ${prev.array[k]} to ${array[k]}.`;
   }
-  const moved = Object.keys(pointers).filter(p => pointers[p] !== (prev.pointers || {})[p]);
-  if (moved.length) return moved.map(p => `${p} moves to ${pointers[p]}`).join(", ") + ".";
-  return "";
+    const parts = Object.keys(pointers)
+    .filter(p => pointers[p] !== (prev.pointers || {})[p])
+    .map(p => `${p} moves to ${pointers[p]}`);
+  const vars = frame.state.vars || {}, prevVars = prev.vars || {};
+  for (const k of Object.keys(vars)) {
+    if (JSON.stringify(vars[k]) !== JSON.stringify(prevVars[k])) parts.push(`${k} becomes ${JSON.stringify(vars[k])}`);
+  }
+  return parts.length ? parts.join(", ") + "." : "";
 }
 
 // A frame with an unanswered quiz blocks Next until the student answers.

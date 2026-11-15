@@ -168,6 +168,19 @@ def _assigned_names(code):
     names |= {a.arg for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) for a in n.args.args}
     return names
 
+def _index_names(code, array_var):
+    """Names used inside the brackets when indexing the array: A[i], A[j + 1], arr[idx]."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+    found = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == array_var:
+            for m in ast.walk(n.slice):
+                if isinstance(m, ast.Name) and m.id not in found and m.id != array_var:
+                    found.append(m.id)
+    return found
 
 def normalize_example(ex):
     """Accept the old API-call schema (input / expected_result, no function_name)
@@ -201,7 +214,9 @@ def normalize_example(ex):
             ex["array_var"] = params[0]   # sorts almost always take the array first
         if not ex.get("pointer_vars"):
             assigned = _assigned_names(code)
-            ex["pointer_vars"] = [p for p in COMMON_POINTERS if p in assigned]
+            common = [p for p in COMMON_POINTERS if p in assigned]
+            indexing = [n for n in _index_names(code, ex["array_var"]) if n in assigned]
+            ex["pointer_vars"] = common + [n for n in indexing if n not in common]
 
     return ex
 
@@ -255,6 +270,10 @@ def process_example(ex):
 
     states = out["states"]
     total = len(states)
+    if total < 2:
+        return {**base, "status": "error",
+                "note": "Nothing changes from step to step, so there's nothing to animate.",
+                "total_steps": total, "frames": []}
     frames = [{
         "example_id": base["example_id"],
         "step": i,

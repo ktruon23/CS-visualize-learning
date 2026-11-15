@@ -24,6 +24,8 @@
 //   .range              { fill: #e8f0ff; }
 //   .pointer line, .pointer polygon { stroke: #3367d6; fill: #3367d6; }
 //   .pointer text       { font: bold 13px monospace; fill: #3367d6; text-anchor: middle; }
+//   .vars               { font: 14px monospace; fill: #444; }
+//   .vars .changed      { font-weight: bold; fill: #b07a00; }
 
 const ARR_CELL_H = 44;        // cell height (px)
 const ARR_MIN_CELL_W = 48;    // narrowest a cell can be (px)
@@ -33,10 +35,15 @@ const ARR_PAD = 30;           // padding around the whole drawing
 const ARR_INDEX_SPACE = 22;   // row above the cells for index numbers
 const ARR_ARROW_SPACE = 22;   // room for the pointer arrows under the cells
 const ARR_POINTER_ROW = 18;   // height of each stacked pointer label
+const ARR_VARS_ROW = 30;      // row under everything for "best = 4   idx = 2"
 
 // If both names of a pair are pointers, the subarray between them is shaded
 // (e.g. the part quicksort is currently working on). First match wins.
 const ARR_RANGE_PAIRS = [["lo", "hi"], ["low", "high"], ["left", "right"], ["l", "r"]];
+
+function arrVarsText(vars) {
+  return Object.entries(vars || {}).map(([k, v]) => `${k} = ${arrFormat(v)}`).join("   ");
+}
 
 function arrFormat(v) {
   return typeof v === "string" || typeof v === "number" ? String(v) : JSON.stringify(v);
@@ -60,13 +67,14 @@ function arrGroupPointers(pointers, length) {
 }
 
 // frames: every frame of ONE example.
-// Returns { cellW, minIdx, maxIdx, cellsTop, pointersTop, width, height, xOf }.
+// Returns { cellW, minIdx, maxIdx, cellsTop, pointersTop, varsTop, width, height, xOf }.
 function layoutArray(frames) {
-  let minIdx = 0, maxIdx = 0, maxStack = 0, maxChars = 1;
+  let minIdx = 0, maxIdx = 0, maxStack = 0, maxChars = 1, maxVarsChars = 0;
 
   for (const f of frames) {
-    const { array, pointers } = f.state;
+    const { array, pointers, vars } = f.state;
     maxIdx = Math.max(maxIdx, array.length - 1);
+    maxVarsChars = Math.max(maxVarsChars, arrVarsText(vars).length);
     for (const v of array) maxChars = Math.max(maxChars, arrFormat(v).length);
     for (const [idx, list] of arrGroupPointers(pointers, array.length)) {
       minIdx = Math.min(minIdx, idx);
@@ -80,11 +88,14 @@ function layoutArray(frames) {
   const slots = maxIdx - minIdx + 1;
   const cellsTop = ARR_PAD + ARR_INDEX_SPACE;
   const pointersTop = cellsTop + ARR_CELL_H + ARR_ARROW_SPACE;
+  const varsTop = pointersTop + maxStack * ARR_POINTER_ROW + (maxVarsChars ? 12 : 0);
+  const cellsWidth = 2 * ARR_PAD + slots * (cellW + ARR_GAP) - ARR_GAP;
+  const varsWidth = 2 * ARR_PAD + maxVarsChars * 8.4;
 
   return {
-    cellW, minIdx, maxIdx, cellsTop, pointersTop,
-    width: 2 * ARR_PAD + slots * (cellW + ARR_GAP) - ARR_GAP,
-    height: pointersTop + maxStack * ARR_POINTER_ROW + ARR_PAD,
+    cellW, minIdx, maxIdx, cellsTop, pointersTop, varsTop,
+    width: Math.max(cellsWidth, varsWidth),
+    height: varsTop + (maxVarsChars ? ARR_VARS_ROW : 0) + ARR_PAD,
     // Left edge of the cell at index i (works for ghost slots -1 and length too).
     xOf: i => ARR_PAD + (i - minIdx) * (cellW + ARR_GAP),
   };
@@ -197,6 +208,23 @@ function drawArray(svg, frame, layout, prevFrame = null) {
       g.appendChild(arrSvgEl("text", { x: cx, y: pointersTop + 10 + row * ARR_POINTER_ROW }, label));
     });
     svg.appendChild(g);
+  }
+
+  // 5. Other variables (accumulators, the insertion key, ...) on one line,
+  // with the ones that just changed in bold.
+  const vars = frame.state.vars || {};
+  if (Object.keys(vars).length) {
+    const before = (prevFrame && prevFrame.state.vars) || null;
+    const text = arrSvgEl("text", { x: ARR_PAD, y: layout.varsTop + 18, class: "vars" });
+    Object.entries(vars).forEach(([k, v], n) => {
+      const changed = before !== null && JSON.stringify(before[k]) !== JSON.stringify(v);
+      const span = arrSvgEl("tspan", changed ? { class: "changed" } : {},
+        `${n ? "   " : ""}${k} = ${arrFormat(v)}`);
+      span.setAttribute("xml:space", "preserve");
+      text.appendChild(span);
+    });
+    text.setAttribute("xml:space", "preserve");
+    svg.appendChild(text);
   }
 
   // Keep the action in view: the first changed cell, else the first pointer.

@@ -300,3 +300,19 @@ main {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ---------- Array visualizer ---------- */
+#viz .cell rect          { fill: #fff; stroke: #888; stroke-width: 1.5; }
+#viz .cell text          { font: 16px "IBM Plex Mono", monospace; text-anchor: middle; }
+#viz .cell               { transition: transform 0.35s ease; }
+#viz .cell.changed rect  { fill: #fff3b0; stroke: #e0a800; stroke-width: 2.5; }
+#viz .cell.new           { animation: arr-pop 0.35s ease; }
+@keyframes arr-pop       { from { opacity: 0; } to { opacity: 1; } }
+#viz .ghost rect         { fill: none; stroke: #bbb; stroke-dasharray: 4 3; }
+#viz .index              { font: 12px "IBM Plex Mono", monospace; fill: #888; text-anchor: middle; }
+#viz .range              { fill: #e8f0ff; }
+#viz .pointer line,
+#viz .pointer polygon    { stroke: #3367d6; fill: #3367d6; }
+#viz .pointer text       { font: 600 13px "IBM Plex Mono", monospace; fill: #3367d6; stroke: none; text-anchor: middle; }
+#viz .vars               { font: 14px "IBM Plex Mono", monospace; fill: #444; }
+#viz .vars .changed      { font-weight: bold; fill: #b07a00; }

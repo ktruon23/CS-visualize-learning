@@ -190,7 +190,16 @@ def trace_array(code, fn_name, args, array_var, pointer_vars, max_steps=MAX_TRAC
             if isinstance(loc.get(p), int) and not isinstance(loc.get(p), bool)
         }
 
-        key = json.dumps([arr_state, pointers], sort_keys=True)
+        # Every other simple local (accumulators like `best`, the insertion-sort
+        # `key`, ...). Without these, code that never writes to the array gives 1 frame.
+        skip = {array_var, *pointer_vars}
+        variables = {
+            k: to_jsonable(v) for k, v in loc.items()
+            if k not in skip and not k.startswith("__")
+            and isinstance(v, (int, float, str, bool))
+        }
+
+        key = json.dumps([arr_state, pointers, variables], sort_keys=True)
         if key == counters["last_key"]:
             return
         counters["last_key"] = key
@@ -205,6 +214,7 @@ def trace_array(code, fn_name, args, array_var, pointer_vars, max_steps=MAX_TRAC
             "array": arr_state,
             "pointers": pointers,
             "highlight": changed,
+            "vars": variables,
             "py_line": frame.f_lineno,
         })
 
