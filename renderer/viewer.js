@@ -21,6 +21,7 @@ const state = {
   layout: null,          // computed once from the last frame
   answered: new Set(),   // frame indexes whose quiz has been answered
   direction: 0,          // +1 after Next, -1 after Back, 0 otherwise (array slide animation)
+  resumeAfterQuiz: false, // autoplay stopped at a quiz; continue once it's answered
 };
 
 const $ = id => document.getElementById(id);
@@ -193,6 +194,8 @@ function showFrames(data) {
 }
 
 function showLoading(text) {
+  pause();
+  state.resumeAfterQuiz = false;
   state.data = null;
   $("note").hidden = true;      // clear what belonged to the previous example
   $("code").hidden = true;
@@ -201,6 +204,7 @@ function showLoading(text) {
   $("explanation").textContent = text;
   $("progress").textContent = "";
   $("back").disabled = $("next").disabled = true;
+  updatePlayButton();
   document.querySelector("#progress-bar span").style.width = "0";
 }
 
@@ -239,6 +243,13 @@ function render() {
 
   $("back").disabled = state.current === 0;
   $("next").disabled = state.current === frames.length - 1 || quizBlocking();
+
+  // Autoplay stopped for a quiz: carry on once it's answered.
+  if (state.resumeAfterQuiz && !quizBlocking()) {
+    state.resumeAfterQuiz = false;
+    play();
+  }
+  updatePlayButton();
 }
 
 // Until the Gemini explanation pass exists, describe each step from the
@@ -345,14 +356,65 @@ function renderQuiz(frame) {
 
 // ---------- controls ----------
 
+// Back / Next / arrow keys: a manual step always stops autoplay.
 function step(delta) {
-  if (!state.data) return;
+  pause();
+  state.resumeAfterQuiz = false;
+  advance(delta);
+}
+
+function advance(delta) {
+  if (!state.data) return false;
   const next = state.current + delta;
-  if (next < 0 || next >= state.data.frames.length) return;
-  if (delta > 0 && quizBlocking()) return;
+  if (next < 0 || next >= state.data.frames.length) return false;
+  if (delta > 0 && quizBlocking()) return false;
   state.current = next;
   state.direction = delta;
   render();
+  return true;
+}
+
+// ---------- autoplay ----------
+
+const PLAY_DELAY_MS = 1100;   // time on each step while playing
+let playTimer = null;
+
+const isPlaying = () => playTimer !== null;
+const atEnd = () => state.data && state.current === state.data.frames.length - 1;
+
+function play() {
+  if (!state.data || state.data.frames.length < 2 || isPlaying()) return;
+  if (atEnd()) {             // "Replay": start over from the first step
+    state.current = 0;
+    state.answered = new Set();
+    render();
+  }
+  playTimer = setInterval(tick, PLAY_DELAY_MS);
+  updatePlayButton();
+}
+
+function pause() {
+  clearInterval(playTimer);
+  playTimer = null;
+  updatePlayButton();
+}
+
+function tick() {
+  if (!advance(1)) { pause(); return; }
+  if (atEnd()) { pause(); return; }
+  if (quizBlocking()) {      // let the student answer before moving on
+    pause();
+    state.resumeAfterQuiz = true;
+  }
+}
+
+function updatePlayButton() {
+  const btn = $("play");
+  const playing = isPlaying();
+  btn.textContent = playing ? "Pause" : atEnd() ? "Replay" : "Play";
+  btn.setAttribute("aria-pressed", String(playing));
+  btn.classList.toggle("playing", playing);
+  btn.disabled = !state.data || state.data.frames.length < 2 || (!playing && quizBlocking());
 }
 
 // Going back to the upload page keeps its results if we came from there.
@@ -362,10 +424,20 @@ $("back-link").onclick = e => {
 
 $("next").onclick = () => step(1);
 $("back").onclick = () => step(-1);
+$("play").onclick = () => (isPlaying() ? pause() : play());
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "SELECT") return;   // arrows change the dropdown there
   if (e.key === "ArrowRight") step(1);
   if (e.key === "ArrowLeft") step(-1);
+  // Space always toggles autoplay, even when Back/Next has focus after a click.
+  if (e.key === " " && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
+    e.preventDefault();
+    if (!e.repeat) isPlaying() ? pause() : play();
+  }
+});
+// A focused button would also "click" itself when Space is released; stop that.
+document.addEventListener("keyup", e => {
+  if (e.key === " " && e.target.tagName === "BUTTON") e.preventDefault();
 });
 
 start();

@@ -388,6 +388,14 @@ main {
   border: 1px solid var(--deep);
 }
 #next:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); }
+#play {
+  min-width: 92px;          /* same width for Play / Pause / Replay */
+  background: #fff;
+  color: var(--deep);
+  border: 1px solid var(--deep);
+}
+#play:hover:not(:disabled) { border-color: var(--signal); color: var(--signal); }
+#play.playing { background: var(--pale); border-color: var(--signal); color: var(--signal); }
 #back:hover:not(:disabled) { border-color: var(--ink-soft); }
 #controls button:disabled { opacity: 0.35; cursor: default; }
 
