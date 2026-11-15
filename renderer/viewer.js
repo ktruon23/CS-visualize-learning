@@ -16,6 +16,7 @@ const state = {
   current: 0,            // index into data.frames
   layout: null,          // computed once from the last frame
   answered: new Set(),   // frame indexes whose quiz has been answered
+  direction: 0,
 };
 
 const $ = id => document.getElementById(id);
@@ -34,6 +35,8 @@ async function load() {
   const { frames, visualizer } = state.data;
   if (visualizer === "tree") {
     state.layout = layoutTree(frames[frames.length - 1].state.nodes);
+  } else if (visualizer === "array") {
+    state.layout = layoutArray(frames);
   }
 
   $("title").textContent = state.data.title || state.data.example_id;
@@ -65,12 +68,16 @@ function render() {
     `${((state.current + 1) / frames.length) * 100}%`;
   $("explanation").textContent = frame.explanation || describeStep(frame);
 
-  if (state.data.visualizer === "tree") {
+    if (state.data.visualizer === "tree") {
     drawTree($("viz"), frame, state.layout);
+  } else if (state.data.visualizer === "array") {
+    const prev = state.direction === 1 ? frames[state.current - 1] : null;
+    drawArray($("viz"), frame, state.layout, prev);
   } else {
     $("viz").innerHTML = "";
     $("explanation").textContent = `The "${state.data.visualizer}" visualizer isn't built yet.`;
   }
+  state.direction = 0;
 
   renderQuiz(frame);
 
@@ -81,6 +88,7 @@ function render() {
 // Until the Gemini explanation pass exists, describe each step from the
 // trace itself. Built only from recorded values, so it can't be wrong.
 function describeStep(frame) {
+  if (state.data.visualizer === "array") return describeArrayStep(frame);
   if (state.data.visualizer !== "tree") return "";
   const { nodes, current } = frame.state;
   const node = nodes.find(n => n.id === current);
@@ -97,6 +105,25 @@ function describeStep(frame) {
   if (node.parent === null) return `Start: call ${node.label}.`;
   const parent = nodes.find(n => n.id === node.parent);
   return `${parent.label} calls ${node.label} and waits for its answer.`;
+}
+
+
+function describeArrayStep(frame) {
+  const i = state.current;
+  const { array, pointers = {}, highlight = [] } = frame.state;
+  if (i === 0) return `Start with [${array.join(", ")}].`;
+  const prev = state.data.frames[i - 1].state;
+  if (highlight.length === 2) {
+    const [a, b] = highlight;
+    return `Swap positions ${a} and ${b}: ${prev.array[a]} and ${prev.array[b]} trade places.`;
+  }
+  if (highlight.length === 1) {
+    const k = highlight[0];
+    return `Position ${k} changes from ${prev.array[k]} to ${array[k]}.`;
+  }
+  const moved = Object.keys(pointers).filter(p => pointers[p] !== (prev.pointers || {})[p]);
+  if (moved.length) return moved.map(p => `${p} moves to ${pointers[p]}`).join(", ") + ".";
+  return "";
 }
 
 // A frame with an unanswered quiz blocks Next until the student answers.
@@ -157,6 +184,7 @@ function step(delta) {
   if (next < 0 || next >= state.data.frames.length) return;
   if (delta > 0 && quizBlocking()) return;
   state.current = next;
+  state.direction = delta;
   render();
 }
 
