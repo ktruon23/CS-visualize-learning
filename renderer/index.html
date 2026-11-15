@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="viewer">
   <header>
     <a class="brand" href="upload.html"><span class="brand-mark"></span>Lecture Visualizer</a>
     <a id="back-link" href="upload.html">All examples</a>
@@ -23,15 +23,18 @@
   <p id="note" hidden></p>
 
   <main>
-    <!-- Left: the original slide -->
+    <!-- Left: the whole deck, scrollable -->
     <section id="slide-panel">
-      <img id="slide-img" alt="Lecture slide">
-      <div id="slide-placeholder" hidden></div>
-      <pre id="code"></pre>
+      <div id="slides" aria-label="Lecture slides"></div>
+      <pre id="code" hidden></pre>
     </section>
 
     <!-- Right: the live visualization -->
     <section id="viz-panel">
+      <div id="example-picker">
+        <label for="example-select">Example</label>
+        <select id="example-select"></select>
+      </div>
       <div id="viz-wrap"><svg id="viz"></svg></div>
       <p id="explanation"></p>
       <div id="quiz" hidden></div>
