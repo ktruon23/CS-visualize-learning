@@ -37,7 +37,7 @@ THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "LOW")  # MINIMAL / LOW
 TIMEOUT_S = int(os.environ.get("GEMINI_TIMEOUT_S", "90"))
 ATTEMPTS = 2
 
-SUPPORTED_VISUALIZERS = {"tree", "array"}
+SUPPORTED_VISUALIZERS = {"tree", "array", "dict"}
 
 # Bump this whenever the prompts change, so the server re-reads decks it has
 # already saved results for instead of reusing results from the old prompt.
@@ -109,8 +109,10 @@ We will animate how a function runs, step by step, for a student.
    If the same function appears on several slides (e.g. two ways to write it),
    list it ONCE with slide_start and slide_end. Don't skip simple examples:
    simple ones are the best to animate.
-3. visualizer: "tree" for recursion, "array" for sorting/searching over an array,
-   "none" if it fits neither.
+3. visualizer: "dict" for a function that looks up or processes key/value pairs
+   (a list of pairs like [(k, v)], an association list, or a dictionary),
+   "tree" for other recursion, "array" for sorting/searching over an array,
+   "none" if it fits none of these.
 4. supported=false (with a one-line reason) ONLY if running it as ordinary Python
    would show the wrong thing: it depends on lazy evaluation or infinite lists,
    evaluation/reduction order, type-level ideas, monads/IO, or concurrency.

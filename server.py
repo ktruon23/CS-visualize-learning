@@ -10,6 +10,7 @@ Run from the repo root:
     python3 server.py
 then open http://localhost:8000
 """
+import ast
 import hashlib
 import importlib.util
 import re
@@ -64,7 +65,46 @@ def run_tracer(tracer, example):
     ex = dict(example)
     if "args_json" not in ex and "args" in ex:
         ex["args_json"] = json.dumps(ex["args"])
-    return tracer.process_example(ex)
+    ex["visualizer"] = pick_visualizer(ex)
+    result = tracer.process_example(ex)
+    result["visualizer"] = ex["visualizer"]
+    return result
+
+
+# ---------- checking Gemini's choice of visualizer ----------
+
+def calls_itself(code, fn_name):
+    """True if fn_name's body calls fn_name (read from the source, not run)."""
+    try:
+        for node in ast.walk(ast.parse(code)):
+            if isinstance(node, ast.FunctionDef) and node.name == fn_name:
+                return any(isinstance(c, ast.Call) and isinstance(c.func, ast.Name)
+                           and c.func.id == fn_name for c in ast.walk(node))
+    except SyntaxError:
+        pass
+    return False
+
+
+def is_pair_list(value):
+    """[["a", 1], ["b", 2]] (or tuples): a list of key/value pairs."""
+    return (isinstance(value, (list, tuple)) and len(value) > 0
+            and all(isinstance(p, (list, tuple)) and len(p) == 2 for p in value))
+
+
+def pick_visualizer(ex):
+    """Gemini labels each example, but the label can be wrong (it called a
+    dictionary lookup "array"). Decide from the code and the input instead:
+    a function that calls itself on a list of key/value pairs is a dict lookup."""
+    args = ex.get("args")
+    if args is None:
+        try:
+            args = json.loads(ex.get("args_json") or "[]")
+        except json.JSONDecodeError:
+            args = []
+    if calls_itself(ex.get("python_code") or "", ex.get("function_name") or "") \
+            and any(is_pair_list(a) for a in args):
+        return "dict"
+    return ex.get("visualizer")
 
 
 # ---------- pages and static files ----------
@@ -171,6 +211,11 @@ def trace_example(deck_id, index):
 
     frames_name = f"frames_{index}.json"
     frames_path = os.path.join(deck_dir, frames_name)
+    if os.path.exists(frames_path):
+        # A saved result with no steps is a past failure, not a real result: redo it.
+        with open(frames_path) as f:
+            if not json.load(f).get("frames"):
+                os.remove(frames_path)
     if not os.path.exists(frames_path):
         tracer = load_tracer()
         if tracer is None:
@@ -197,13 +242,15 @@ def trace_example(deck_id, index):
             if result.get("note"):
                 msg += f" {result['note']}"
             return jsonify(error=msg), 422
+        if not result["frames"]:
+            return jsonify(error="The tracer ran this example but recorded no steps to show."), 422
 
         data = {
             "example_id": f"{deck_id}-{index}",
             "title": example["title"],
             "slide_start": example["slide_start"],
             "slide_end": example["slide_end"],
-            "visualizer": example["visualizer"],
+            "visualizer": result["visualizer"],   # may differ from Gemini's label
             "original_code": example["original_code"],
             "status": result["status"],
             # Only worth telling the student when the input was shrunk,

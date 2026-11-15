@@ -1,0 +1,605 @@
+{
+ "example_id": "dict-miss",
+ "title": "Haskell: lookup of a missing key",
+ "slide_start": 1,
+ "slide_end": 1,
+ "visualizer": "dict",
+ "original_code": "f :: String -> [(String, Int)] -> Int\nf _ []   = 0\nf x ((k,v) : ps)\n  | x == k    = v\n  | otherwise = f x ps",
+ "frames": [
+  {
+   "example_id": "slide42-f",
+   "step": 0,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     }
+    ],
+    "current": 0
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 1,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     }
+    ],
+    "current": 1
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 2,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     }
+    ],
+    "current": 2
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 3,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 3,
+      "parent": 2,
+      "label": "f \"z\" []",
+      "args": {
+       "x": "z",
+       "ps": []
+      },
+      "status": "active",
+      "returned": null
+     }
+    ],
+    "current": 3
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 4,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     },
+     {
+      "id": 3,
+      "parent": 2,
+      "label": "f \"z\" []",
+      "args": {
+       "x": "z",
+       "ps": []
+      },
+      "status": "returned",
+      "returned": 0
+     }
+    ],
+    "current": 3
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 5,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "waiting",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 3,
+      "parent": 2,
+      "label": "f \"z\" []",
+      "args": {
+       "x": "z",
+       "ps": []
+      },
+      "status": "returned",
+      "returned": 0
+     }
+    ],
+    "current": 2
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 6,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "active",
+      "returned": null
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 3,
+      "parent": 2,
+      "label": "f \"z\" []",
+      "args": {
+       "x": "z",
+       "ps": []
+      },
+      "status": "returned",
+      "returned": 0
+     }
+    ],
+    "current": 1
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  },
+  {
+   "example_id": "slide42-f",
+   "step": 7,
+   "total_steps": 8,
+   "visualizer": "dict",
+   "state": {
+    "nodes": [
+     {
+      "id": 0,
+      "parent": null,
+      "label": "f \"z\" [[\"a\",1],[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "a",
+         1
+        ],
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 1,
+      "parent": 0,
+      "label": "f \"z\" [[\"b\",2],[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "b",
+         2
+        ],
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 2,
+      "parent": 1,
+      "label": "f \"z\" [[\"c\",3]]",
+      "args": {
+       "x": "z",
+       "ps": [
+        [
+         "c",
+         3
+        ]
+       ]
+      },
+      "status": "returned",
+      "returned": 0
+     },
+     {
+      "id": 3,
+      "parent": 2,
+      "label": "f \"z\" []",
+      "args": {
+       "x": "z",
+       "ps": []
+      },
+      "status": "returned",
+      "returned": 0
+     }
+    ],
+    "current": 0
+   },
+   "explanation": null,
+   "quiz": null,
+   "slide_line": null
+  }
+ ]
+}

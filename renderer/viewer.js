@@ -179,6 +179,8 @@ function showFrames(data) {
     ? layoutTree(data.frames[data.frames.length - 1].state.nodes)
     : data.visualizer === "array"
     ? layoutArray(data.frames)
+    : data.visualizer === "dict"
+    ? layoutDict(data.frames)
     : null;
 
   $("title").textContent = data.title || data.example_id;
@@ -225,6 +227,8 @@ function render() {
   } else if (state.data.visualizer === "array") {
     const prev = state.direction === 1 ? frames[state.current - 1] : null;
     drawArray($("viz"), frame, state.layout, prev);
+  } else if (state.data.visualizer === "dict") {
+    drawDict($("viz"), frame, state.layout);
   } else {
     $("viz").innerHTML = "";
     $("explanation").textContent = `The "${state.data.visualizer}" visualizer isn't built yet.`;
@@ -241,6 +245,7 @@ function render() {
 // trace itself. Built only from recorded values, so it can't be wrong.
 function describeStep(frame) {
   if (state.data.visualizer === "array") return describeArrayStep(frame);
+  if (state.data.visualizer === "dict") return describeDictStep(frame, state.layout);
   if (state.data.visualizer !== "tree") return "";
   const { nodes, current } = frame.state;
   const node = nodes.find(n => n.id === current);

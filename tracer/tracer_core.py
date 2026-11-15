@@ -133,6 +133,7 @@ def trace_tree(code, fn_name, args, call_label, max_steps=MAX_TRACE_STEPS):
             "id": node_id,
             "parent": parent,
             "label": make_label(call_label, fn_name, bound_args),
+            "args": to_jsonable(bound_args),   # actual argument values (the dict view needs them)
             "status": "active",
             "returned": None,
         })
@@ -246,7 +247,7 @@ def run_example(ex, max_steps=MAX_TRACE_STEPS):
         if not isinstance(args, list):
             return {"error": "exception", "message": "args_json must be a JSON list"}
         vis = ex.get("visualizer")
-        if vis == "tree":
+        if vis in ("tree", "dict"):   # dict = recursion over a list of key/value pairs
             result, states = trace_tree(
                 ex["python_code"], ex["function_name"], args,
                 ex.get("call_label") or "", max_steps)

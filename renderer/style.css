@@ -301,6 +301,38 @@ main {
 .node.current.returned rect { fill: var(--signal); }
 .node.current .returned { fill: var(--signal); }
 
+/* ---------- Dictionary (recursion over key/value pairs) ---------- */
+
+.dict-heading { font-family: var(--sans); font-size: 16px; font-weight: 600; fill: var(--ink); }
+.dict-col { font-family: var(--sans); font-size: 12px; fill: var(--ink-soft); }
+.dict-text { font-family: var(--mono); font-size: 14px; text-anchor: middle; fill: var(--ink); }
+
+.dict-row rect { fill: #fff; stroke: var(--line); stroke-width: 1.5; }
+
+/* checked, key didn't match: fades back */
+.dict-row.miss rect { fill: var(--paper); }
+.dict-row.miss .dict-text { fill: var(--ink-soft); }
+
+/* checked, key matches */
+.dict-row.match rect { fill: var(--pale); stroke: var(--pale-line); }
+
+/* the matching call has returned its value */
+.dict-row.found rect { fill: var(--deep); stroke: var(--deep); }
+.dict-row.found .dict-text { fill: #fff; }
+
+/* the row the current call is looking at */
+.dict-row.current rect { stroke: var(--signal); stroke-width: 3; }
+
+.dict-end rect { fill: none; stroke: var(--line); stroke-dasharray: 5 4; stroke-width: 1.5; }
+.dict-end .dict-text { fill: var(--ink-soft); font-size: 13px; }
+.dict-end.reached rect { stroke: var(--pale-line); }
+.dict-end.current rect { stroke: var(--signal); stroke-width: 2.5; }
+
+.dict-link { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.dict-link.current { stroke: var(--signal); stroke-width: 2; stroke-dasharray: none; }
+
+.node .returned.dict-ret { text-anchor: start; }
+
 /* ---------- Quiz ---------- */
 
 #quiz {
