@@ -268,6 +268,42 @@ function describeStep(frame) {
   const node = nodes.find(n => n.id === current);
   if (!node) return "";
   const show = v => JSON.stringify(v);
+  const parent = nodes.find(n => n.id === node.parent);
+
+  // Recursion that splits a list in two (quicksort, merge sort): say how.
+  const split = node.status === "returned" ? listSplit(node) : parent && listSplit(parent);
+  if (split) {
+    const { left, right, pivot, byPivot, kids } = split;
+    if (node.status !== "returned" && node.id === kids[0].id) {
+      const how = byPivot && !left.length && !right.length
+        ? `picks ${show(pivot)} as the pivot, and nothing else is left to split`
+        : byPivot
+        ? `picks ${show(pivot)} as the pivot. The rest splits into ${show(left)} (≤ ${show(pivot)}) and ${show(right)} (> ${show(pivot)})`
+        : pivot !== null
+        ? `keeps ${show(pivot)} aside and splits the rest into ${show(left)} and ${show(right)}`
+        : `splits its list into ${show(left)} and ${show(right)}`;
+      return `${parent.label} ${how}. First the left part: ${node.label}.`;
+    }
+    if (node.status !== "returned" && node.id === kids[1].id) {
+      return `Left part done. Now the right part: ${node.label}.`;
+    }
+    if (node.status === "returned") {
+      const [l, r] = kids.map(k => nodes.find(n => n.id === k.id)?.returned);
+      const joined = pivot !== null ? [...(l || []), pivot, ...(r || [])] : null;
+      const result = node.returned;
+      const isSorted = xs => Array.isArray(xs) && xs.every((x, i) => i === 0 || xs[i - 1] <= x);
+      const done = node.parent === null && isSorted(result) ? " The whole list is sorted." : "";
+      if (joined && show(joined) === show(result)) {
+        return `${node.label} joins ${show(l)} ++ [${show(pivot)}] ++ ${show(r)} = ${show(result)}.` + done;
+      }
+      // Merge sort: the answer is both sorted halves interleaved in order.
+      const sameItems = (a, b) => show([...a].sort()) === show([...b].sort());
+      if (pivot === null && Array.isArray(l) && Array.isArray(r) && isSorted(result) && sameItems([...l, ...r], result)) {
+        return `${node.label} merges ${show(l)} and ${show(r)} into ${show(result)}.` + done;
+      }
+    }
+  }
+
   if (node.status === "returned") {
     const kids = nodes.filter(n => n.parent === node.id && n.status === "returned");
     if (kids.length) {
@@ -277,8 +313,35 @@ function describeStep(frame) {
     return `${node.label} returns ${show(node.returned)} directly. This is a base case.`;
   }
   if (node.parent === null) return `Start: call ${node.label}.`;
-  const parent = nodes.find(n => n.id === node.parent);
   return `${parent.label} calls ${node.label} and waits for its answer.`;
+}
+
+// For a call that splits one list into two recursive calls (quicksort, merge
+// sort): the two parts, and what was left over (quicksort's pivot). Uses the
+// finished trace, so the whole split is known as soon as the first part starts.
+// Every claim (left <= pivot < right) is checked against the recorded values.
+function listSplit(node) {
+  const all = state.data.frames[state.data.frames.length - 1].state.nodes;
+  const listOf = n => {
+    const vals = Object.values(n.args || {});
+    return vals.length === 1 && Array.isArray(vals[0]) && vals[0].every(x => !Array.isArray(x)) ? vals[0] : null;
+  };
+  const whole = listOf(node);
+  if (!whole) return null;
+  const kids = all.filter(n => n.parent === node.id);
+  if (kids.length !== 2 || kids.some(k => !listOf(k))) return null;
+  const rest = [...whole];
+  for (const k of kids) {
+    for (const x of listOf(k)) {
+      const at = rest.findIndex(y => JSON.stringify(y) === JSON.stringify(x));
+      if (at < 0) return null;   // the parts aren't pieces of this list
+      rest.splice(at, 1);
+    }
+  }
+  const [left, right] = kids.map(listOf);
+  const pivot = rest.length === 1 ? rest[0] : null;
+  const byPivot = typeof pivot === "number" && left.every(x => x <= pivot) && right.every(x => x > pivot);
+  return { left, right, pivot, byPivot, kids };
 }
 
 // Same idea for arrays: say what changed since the previous step.
@@ -287,13 +350,18 @@ function describeArrayStep(frame) {
   const { array, pointers = {}, highlight = [] } = frame.state;
   if (i === 0) return `Start with [${array.join(", ")}].`;
   const prev = state.data.frames[i - 1].state;
-  if (highlight.length === 2) {
+  // Only describe a change from the old value if the old value existed
+  // (the array can grow between steps, which used to print "undefined").
+  const had = k => k < prev.array.length;
+  if (highlight.length === 2 && had(highlight[0]) && had(highlight[1])) {
     const [a, b] = highlight;
     return `Swap positions ${a} and ${b}: ${prev.array[a]} and ${prev.array[b]} trade places.`;
   }
   if (highlight.length === 1) {
     const k = highlight[0];
-    return `Position ${k} changes from ${prev.array[k]} to ${array[k]}.`;
+    return had(k)
+      ? `Position ${k} changes from ${prev.array[k]} to ${array[k]}.`
+      : `Position ${k} becomes ${array[k]}.`;
   }
   const parts = Object.keys(pointers)
     .filter(p => pointers[p] !== (prev.pointers || {})[p])

@@ -85,6 +85,24 @@ def calls_itself(code, fn_name):
     return False
 
 
+def changes_in_place(code, fn_name):
+    """True if fn_name writes into a list by position (a[i] = ..., a[i] += ...,
+    del a[i]), which is what in-place sorts do. Building new lists doesn't count."""
+    try:
+        for node in ast.walk(ast.parse(code)):
+            if isinstance(node, ast.FunctionDef) and node.name == fn_name:
+                for n in ast.walk(node):
+                    targets = (n.targets if isinstance(n, (ast.Assign, ast.Delete))
+                               else [n.target] if isinstance(n, ast.AugAssign) else [])
+                    for t in targets:
+                        for part in ast.walk(t):
+                            if isinstance(part, ast.Subscript):
+                                return True
+    except SyntaxError:
+        pass
+    return False
+
+
 def is_pair_list(value):
     """[["a", 1], ["b", 2]] (or tuples): a list of key/value pairs."""
     return (isinstance(value, (list, tuple)) and len(value) > 0
@@ -101,9 +119,15 @@ def pick_visualizer(ex):
             args = json.loads(ex.get("args_json") or "[]")
         except json.JSONDecodeError:
             args = []
-    if calls_itself(ex.get("python_code") or "", ex.get("function_name") or "") \
-            and any(is_pair_list(a) for a in args):
+    code, fn = ex.get("python_code") or "", ex.get("function_name") or ""
+    recursive = calls_itself(code, fn)
+    if recursive and any(is_pair_list(a) for a in args):
         return "dict"
+    # A recursive function that builds new lists (Haskell-style quicksort:
+    # sort ls ++ [x] ++ sort rs) is a tree of calls, not one array changing.
+    # The array view would mix every call's list into one row.
+    if recursive and ex.get("visualizer") == "array" and not changes_in_place(code, fn):
+        return "tree"
     return ex.get("visualizer")
 
 
@@ -212,10 +236,12 @@ def trace_example(deck_id, index):
     frames_name = f"frames_{index}.json"
     frames_path = os.path.join(deck_dir, frames_name)
     if os.path.exists(frames_path):
-        # A saved result with no steps is a past failure, not a real result: redo it.
+        # Redo a saved result if it has no steps (a past failure) or was made
+        # with a different view than the one we'd pick now (an older rule).
         with open(frames_path) as f:
-            if not json.load(f).get("frames"):
-                os.remove(frames_path)
+            saved = json.load(f)
+        if not saved.get("frames") or saved.get("visualizer") != pick_visualizer(example):
+            os.remove(frames_path)
     if not os.path.exists(frames_path):
         tracer = load_tracer()
         if tracer is None:
