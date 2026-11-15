@@ -12,6 +12,7 @@ then open http://localhost:8000
 """
 import hashlib
 import importlib.util
+import re
 import json
 import os
 import sys
@@ -120,10 +121,31 @@ def upload_deck():
     return jsonify(deck_id=deck_id, **result)
 
 
+def deck_dir_for(deck_id):
+    """Deck ids come from the URL, so only accept the 12-hex-character ids we make."""
+    if not re.fullmatch(r"[0-9a-f]{12}", deck_id):
+        abort(404)
+    return os.path.join(DECKS_DIR, deck_id)
+
+
+@app.get("/api/decks/<deck_id>")
+def get_deck(deck_id):
+    """Everything the viewer needs to show the whole deck: examples + slide count."""
+    deck_dir = deck_dir_for(deck_id)
+    examples_path = os.path.join(deck_dir, "examples.json")
+    if not os.path.exists(examples_path):
+        abort(404)
+    with open(examples_path) as f:
+        result = json.load(f)
+    slides = os.listdir(os.path.join(deck_dir, "slides"))
+    num_slides = sum(1 for name in slides if re.fullmatch(r"slide_\d+\.png", name))
+    return jsonify(deck_id=deck_id, num_slides=num_slides, **result)
+
+
 @app.post("/api/decks/<deck_id>/examples/<int:index>/trace")
 def trace_example(deck_id, index):
     """Run the tracer on one example and save a frames file the viewer can load."""
-    deck_dir = os.path.join(DECKS_DIR, deck_id)
+    deck_dir = deck_dir_for(deck_id)
     examples_path = os.path.join(deck_dir, "examples.json")
     if not os.path.exists(examples_path):
         abort(404)

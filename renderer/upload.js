@@ -161,8 +161,8 @@ async function openExample(deckId, index, btn, errBox) {
     const res = await fetch(`/api/decks/${deckId}/examples/${index}/trace`, { method: "POST" });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || `The server answered ${res.status}.`);
-    const q = new URLSearchParams({ data: body.data_url, slides: body.slides_url });
-    location.href = `index.html?${q}`;
+    // The viewer shows the whole deck, with this example open.
+    location.href = `index.html?deck=${deckId}&example=${index}`;
   } catch (e) {
     errBox.textContent = e.message;
     btn.disabled = false;
